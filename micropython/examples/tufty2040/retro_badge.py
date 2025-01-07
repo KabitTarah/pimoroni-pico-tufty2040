@@ -1,23 +1,28 @@
 # A retro badge with photo and QR code.
 # Copy your image to your Tufty alongside this example - it should be a 120 x 120 jpg.
 
+import os
 from picographics import PicoGraphics, DISPLAY_TUFTY_2040
 from pimoroni import Button
 import time
 import jpegdec
 import qrcode
 
-display = PicoGraphics(display=DISPLAY_TUFTY_2040)
-button_c = Button(9, invert=False)
+from util.button_handler import ButtonHandler
+from util.constants import Constants as c
+from util.wrapped_generator import WrappedGeneratorTimer
+
+display = c.display
+buttons = ButtonHandler()
 
 WIDTH, HEIGHT = display.get_bounds()
 
 # Uncomment one of these four colour palettes - find more at lospec.com !
 # Nostalgia colour palette by WildLeoKnight - https://lospec.com/palette-list/nostalgia
-LIGHTEST = display.create_pen(208, 208, 88)
-LIGHT = display.create_pen(160, 168, 64)
-DARK = display.create_pen(112, 128, 40)
-DARKEST = display.create_pen(64, 80, 16)
+# LIGHTEST = display.create_pen(208, 208, 88)
+# LIGHT = display.create_pen(160, 168, 64)
+# DARK = display.create_pen(112, 128, 40)
+# DARKEST = display.create_pen(64, 80, 16)
 
 # 2bit Demichrome colour palette by Space Sandwich - https://lospec.com/palette-list/2bit-demichrome
 # LIGHTEST = display.create_pen(233, 239, 236)
@@ -31,22 +36,29 @@ DARKEST = display.create_pen(64, 80, 16)
 # DARK = display.create_pen(255, 85, 255)
 # DARKEST = display.create_pen(0, 0, 0)
 
+# CGA PALETTE 1 (HIGH) - https://lospec.com/palette-list/cga-palette-1-high
+LIGHTEST = display.create_pen(156, 210, 126)
+LIGHT = LIGHTEST
+DARK = display.create_pen(172, 109, 209)
+DARKEST = display.create_pen(53, 53, 53)
+
 # Change your badge and QR details here!
-COMPANY_NAME = "sciurus cybernetics"
-NAME = "M. 'TuFTy'"
-BLURB1 = "RP2040 plus 320x240 TFT LCD"
-BLURB2 = "Nuts From Trees collector"
-BLURB3 = "Will work for peanuts"
+COMPANY_NAME = "ANE 2025!!"
+NAME = "Kabit"
+BLURB1 = "Am Bnnny"
+BLURB2 = "Not a fox"
+BLURB3 = "#1 it/she bun"
 
-QR_TEXT = "pimoroni.com/tufty2040"
+QR_TEXT = "linktr.ee/kabit"
 
-IMAGE_NAME = "squirrel.jpg"
+IMAGE_DIR = "images/120x120/"
+IMAGES = os.listdir(IMAGE_DIR)
+IMAGE_DURATION = 60
 
 # Some constants we'll use for drawing
 BORDER_SIZE = 4
 PADDING = 10
 COMPANY_HEIGHT = 40
-
 
 def draw_badge():
     # draw border
@@ -84,11 +96,11 @@ def draw_badge():
     display.text(BLURB3, BORDER_SIZE + PADDING + 135 + PADDING, 175, 160, 2)
 
 
-def show_photo():
+def show_photo(filename):
     j = jpegdec.JPEG(display)
 
     # Open the JPEG file
-    j.open_file(IMAGE_NAME)
+    j.open_file(f"{IMAGE_DIR}/{filename}")
 
     # Draws a box around the image
     display.set_pen(DARKEST)
@@ -134,12 +146,18 @@ def show_qr():
 
 # draw the badge for the first time
 badge_mode = "photo"
+image_gen = WrappedGeneratorTimer(IMAGES, IMAGE_DURATION)
+photo = image_gen.next()
 draw_badge()
-show_photo()
+show_photo(photo)
 display.update()
 
 while True:
-    if button_c.is_pressed:
+    flags = buttons.get_flags()
+    if "a" in flags and "c" in flags:
+        break
+
+    if buttons.get_flag("c"):
         if badge_mode == "photo":
             badge_mode = "qr"
             show_qr()
@@ -147,6 +165,13 @@ while True:
         else:
             badge_mode = "photo"
             draw_badge()
-            show_photo()
+            show_photo(photo)
             display.update()
-        time.sleep(1)
+    
+    if photo != image_gen.next() and badge_mode == "photo":
+        photo = image_gen.next()
+        show_photo(photo)
+        display.update()
+
+    buttons.reset()
+    time.sleep_ms(250)
