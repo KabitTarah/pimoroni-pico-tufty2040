@@ -7,8 +7,7 @@ from util.button_handler import ButtonHandler
 from util.constants import Constants as c
 from util.wrapped_generator import WrappedGenerator
 
-buttons = ButtonHandler()
-display = PicoGraphics(display=DISPLAY_TUFTY_2040)
+display = c.display
 
 WIDTH, HEIGHT = display.get_bounds()
 
@@ -38,17 +37,17 @@ COLOUR_ORDERS = [
 ]
 
 COLORS = [
+    VIOLET,
+    WHITE,
+    BLACK,
     RED,
     ORANGE,
     YELLOW,
     GREEN,
     INDIGO,
-    VIOLET,
-    WHITE,
     PINK,
     BLUE,
     BROWN,
-    BLACK,
     MAGENTA,
     CYAN,
 ]
@@ -120,49 +119,55 @@ def set_pronouns(pronouns, text_color):
             display.text(pronouns, int((WIDTH - pronouns_length) / 2), 175, WIDTH, pronouns_size)
             break
 
+def main():
+    buttons = ButtonHandler()
 
-# Once all the adjusting and drawing is done, update the display.
-name_gen = WrappedGenerator(NAMES)
-name = name_gen.next()
-pronouns_gen = WrappedGenerator(PRONOUNS)
-pronouns = pronouns_gen.next()
-text_color_gen = WrappedGenerator(COLORS)
-text_color = text_color_gen.next()
-color_gen = WrappedGenerator(COLOUR_ORDERS)
-color_order = color_gen.next()
-direction_gen = WrappedGenerator(STRIPES_DIRECTIONS)
-stripes_direction = direction_gen.next()
+    # Once all the adjusting and drawing is done, update the display.
+    name_gen = WrappedGenerator(NAMES)
+    name = name_gen.next()
+    pronouns_gen = WrappedGenerator(PRONOUNS)
+    pronouns = pronouns_gen.next()
+    text_color_gen = WrappedGenerator(COLORS)
+    text_color = text_color_gen.next()
+    color_gen = WrappedGenerator(COLOUR_ORDERS)
+    color_order = color_gen.next()
+    direction_gen = WrappedGenerator(STRIPES_DIRECTIONS)
+    stripes_direction = direction_gen.next()
 
-changed = True
-while True:
-    flags = buttons.get_flags()
-    if "a" in flags and "c" in flags:
-        break
-    if changed:
-        display.clear()
-        draw_flag(color_order, stripes_direction)
-        set_name(name, text_color)
-        set_pronouns(pronouns, text_color)
-        display.update()
-        changed = False
+    changed = True
+    while True:
+        flags = buttons.get_flags()
+        if "a" in flags and "c" in flags:
+            break
+        if changed:
+            display.clear()
+            draw_flag(color_order, stripes_direction)
+            set_name(name, text_color)
+            set_pronouns(pronouns, text_color)
+            display.update()
+            changed = False
+            
+        if buttons.get_flag("a"):
+            name = name_gen.next()
+            changed = True
+        if buttons.get_flag("b"):
+            text_color = text_color_gen.next()
+            changed = True
+        if buttons.get_flag("c"):
+            pronouns = pronouns_gen.next()
+            changed = True
+        if buttons.get_flag("u"):
+            color_order = color_gen.next()
+            changed = True
+        if buttons.get_flag("d"):
+            stripes_direction = direction_gen.next()
+            changed = True
         
-    if buttons.get_flag("a"):
-        name = name_gen.next()
-        changed = True
-    if buttons.get_flag("b"):
-        text_color = text_color_gen.next()
-        changed = True
-    if buttons.get_flag("c"):
-        pronouns = pronouns_gen.next()
-        changed = True
-    if buttons.get_flag("u"):
-        color_order = color_gen.next()
-        changed = True
-    if buttons.get_flag("d"):
-        stripes_direction = direction_gen.next()
-        changed = True
-    
-    buttons.reset()
+        buttons.reset()
+        
+        # Allow for multiple button presses to control exit condition
+        time.sleep_ms(250)
 
-     # Allow for multiple button presses to control exit condition
-    time.sleep_ms(250)
+
+if __name__ == "__main__":
+    main()
